@@ -1,6 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import router
+import sys
+import os
+
+print("Starting SmartRepo...", flush=True)
+print(f"Python: {sys.version}", flush=True)
+print(f"Working dir: {os.getcwd()}", flush=True)
+
+try:
+    from api.routes import router
+    print("Routes imported OK", flush=True)
+except Exception as e:
+    print(f"ROUTES IMPORT FAILED: {e}", flush=True)
+    sys.exit(1)
 
 app = FastAPI(title="SmartRepo API", version="1.0.0")
 
