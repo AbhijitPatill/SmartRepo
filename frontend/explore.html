@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartRepo — Explore</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F8FAFC; --surface: #FFFFFF; --surface2: #F1F5F9;
+  --border: #E2E8F0; --border-light: #CBD5E1;
+  --text: #0F172A; --text-2: #475569; --text-3: #94A3B8;
+  --blue: #2563EB; --blue-dim: #EFF6FF; --blue-border: #BFDBFE;
+  --green: #059669; --green-dim: #ECFDF5; --green-border: #A7F3D0;
+  --red: #DC2626; --mono: 'JetBrains Mono', monospace; --sans: 'Inter', sans-serif;
+}
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+/* NAV — exact match to index.html */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 60px; background: rgba(248,250,252,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 2rem; }
+.nav-inner { max-width: 1100px; width: 100%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--mono); font-weight: 700; font-size: 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+.nav-logo .dot { width: 8px; height: 8px; background: var(--blue); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+.nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--text-2); text-decoration: none; transition: color 0.15s; }
+.nav-links a:hover { color: var(--text); }
+.nav-back { background: var(--surface); color: var(--text-2); padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.8rem; border: 1px solid var(--border); text-decoration: none; transition: all 0.15s; }
+.nav-back:hover { border-color: var(--border-light); color: var(--text); }
+@media (max-width: 600px) { .nav-links { display: none; } }
+
+/* PAGE */
+.page { padding: 5.5rem 2rem 5rem; max-width: 1100px; margin: 0 auto; }
+
+/* ── UPLOAD CARD ── */
+.upload-card {
+  display: grid; grid-template-columns: 260px 1fr;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden; margin-bottom: 3.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+}
+@media (max-width: 700px) { .upload-card { grid-template-columns: 1fr; } }
+
+/* LEFT — dark panel matching index.html btn-primary / member-avatar style */
+.upload-brand {
+  background: var(--text); padding: 2rem 1.75rem;
+  display: flex; flex-direction: column; gap: 1.75rem;
+}
+.brand-eyebrow {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: rgba(255,255,255,0.3); letter-spacing: 0.12em;
+  text-transform: uppercase; display: flex; align-items: center; gap: 0.4rem;
+}
+.brand-eyebrow::before { content:''; width:5px; height:5px; border-radius:50%; background:#3b82f6; flex-shrink:0; }
+.brand-title { font-size: 1.1rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1.35; }
+.brand-desc { font-size: 0.76rem; color: rgba(255,255,255,0.38); line-height: 1.65; }
+.brand-divider { height: 1px; background: rgba(255,255,255,0.07); }
+.brand-features { display: flex; flex-direction: column; gap: 0.7rem; }
+.brand-feat { display: flex; align-items: center; gap: 0.6rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-family: var(--mono); }
+.brand-feat::before { content:'✓'; font-size: 0.7rem; color: #34d399; flex-shrink:0; }
+
+/* RIGHT — form panel */
+.upload-form { padding: 1.75rem 1.75rem; display: flex; flex-direction: column; gap: 1rem; }
+
+/* TABS — segmented control style */
+.upload-tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 3px; }
+.tab-btn { flex: 1; padding: 0.48rem 0.75rem; font-size: 0.76rem; font-weight: 500; font-family: var(--mono); background: transparent; border: none; border-radius: 6px; color: var(--text-3); cursor: pointer; transition: all 0.15s; }
+.tab-btn.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 0 0 1px var(--border); }
+.tab-btn:hover:not(.active) { color: var(--text-2); }
+.tab-content { display: flex; flex-direction: column; gap: 0.85rem; }
+
+/* DROP ZONE */
+.drop-zone {
+  border: 1.5px dashed var(--border-light); border-radius: 10px;
+  padding: 1.5rem 1.25rem; cursor: pointer;
+  display: flex; align-items: center; gap: 1rem;
+  transition: all 0.2s; background: var(--surface2);
+}
+.drop-zone:hover { border-color: var(--blue); background: var(--blue-dim); }
+.drop-zone:hover .dz-icon, .drop-zone:hover .dz-title { color: var(--blue); }
+.drop-zone.has-file { border-color: var(--green); border-style: solid; background: var(--green-dim); }
+.drop-zone.has-file .dz-icon, .drop-zone.has-file .dz-title { color: var(--green); }
+.dz-icon-wrap { width: 38px; height: 38px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.drop-zone:hover .dz-icon-wrap { border-color: var(--blue-border); background: var(--blue-dim); }
+.drop-zone.has-file .dz-icon-wrap { border-color: var(--green-border); background: var(--green-dim); }
+.dz-icon { color: var(--text-3); transition: color 0.2s; }
+.dz-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.dz-title { font-family: var(--mono); font-size: 0.78rem; color: var(--text-2); font-weight: 600; transition: color 0.2s; }
+.dz-sub { font-size: 0.69rem; color: var(--text-3); font-family: var(--mono); }
+
+/* URL INPUT */
+.url-input-wrap { position: relative; display: flex; align-items: center; }
+.url-input-wrap svg { position: absolute; left: 0.9rem; color: var(--text-3); pointer-events: none; }
+.url-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 0.78rem; color: var(--text); outline: none; transition: border-color 0.15s; }
+.url-input:focus { border-color: var(--blue); background: #fff; }
+.url-input::placeholder { color: var(--text-3); }
+
+/* BUTTON — exact match to index.html .btn-primary */
+.upload-btn { width: 100%; padding: 0.72rem 1.5rem; background: var(--text); color: #fff; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: background 0.15s, transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.upload-btn:hover:not(:disabled) { background: #1E293B; transform: translateY(-1px); }
+.upload-btn:disabled { background: var(--surface2); color: var(--text-3); cursor: not-allowed; border: 1px solid var(--border); box-shadow: none; transform: none; }
+
+/* PROGRESS */
+.progress-wrap { display: none; flex-direction: column; gap: 0.6rem; padding: 1rem 1.1rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+.progress-wrap.visible { display: flex; }
+.progress-stage { font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); display: flex; align-items: center; gap: 0.5rem; }
+.stage-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: pulse-dot 1s infinite; flex-shrink: 0; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.progress-bar-track { height: 3px; background: var(--border); border-radius: 100px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--blue); border-radius: 100px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+.progress-pct { font-family: var(--mono); font-size: 0.68rem; color: var(--text-3); text-align: right; }
+.progress-done { font-family: var(--mono); font-size: 0.78rem; color: var(--green); display: flex; align-items: center; gap: 0.5rem; }
+.progress-err { font-family: var(--mono); font-size: 0.78rem; color: var(--red); display: flex; align-items: center; gap: 0.5rem; }
+
+/* SECTION HEADER — exact match index.html .section-label */
+.section-label { font-family: var(--mono); font-size: 0.72rem; color: var(--blue); background: var(--blue-dim); border: 1px solid var(--blue-border); padding: 0.3rem 0.85rem; border-radius: 100px; letter-spacing: 0.05em; display: inline-block; }
+.page-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; letter-spacing: -0.03em; margin-top: 1rem; line-height: 1.15; }
+.page-sub { font-size: 1rem; color: var(--text-2); margin-top: 0.75rem; line-height: 1.7; max-width: 500px; }
+
+/* LAYOUT */
+.demo-layout { margin-top: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 768px) { .demo-layout { grid-template-columns: 1fr; } }
+
+/* INPUT PANEL */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.panel-header { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+.panel-title { font-size: 0.72rem; font-weight: 600; color: var(--text-2); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.panel-badge { font-size: 0.68rem; font-family: var(--mono); padding: 0.2rem 0.65rem; border-radius: 100px; background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); display: flex; align-items: center; gap: 0.4rem; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: live-pulse 2s infinite; }
+@keyframes live-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.panel-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+/* CONTEXT BOX */
+.context-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; }
+.context-label { font-size: 0.65rem; font-family: var(--mono); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.context-file { display: flex; align-items: center; gap: 0.45rem; font-family: var(--mono); font-size: 0.72rem; color: var(--text-2); padding: 0.2rem 0; }
+.file-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.context-empty { font-family: var(--mono); font-size: 0.72rem; color: var(--text-3); }
+
+/* CHIPS */
+.chips-label { font-size: 0.72rem; font-weight: 600; color: var(--text-2); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.chip { font-size: 0.72rem; padding: 0.35rem 0.7rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.15s; font-family: var(--mono); }
+.chip:hover { border-color: var(--blue-border); color: var(--blue); background: var(--blue-dim); }
+.chip-skeleton { height: 27px; border-radius: 6px; background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0%{background-position:200%} 100%{background-position:-200%} }
+
+/* TEXTAREA */
+.query-label { font-size: 0.72rem; font-weight: 600; color: var(--text-2); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+textarea { width: 100%; min-height: 96px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; font-family: var(--mono); font-size: 0.8rem; color: var(--text); resize: none; outline: none; line-height: 1.6; transition: border-color 0.15s; }
+textarea:focus { border-color: var(--blue); background: #fff; }
+textarea::placeholder { color: var(--text-3); }
+.ask-btn { width: 100%; padding: 0.72rem; background: var(--text); color: #fff; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s, transform 0.1s; font-family: var(--sans); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.ask-btn:hover:not(:disabled) { background: #1E293B; transform: translateY(-1px); }
+.ask-btn:disabled { background: var(--surface2); color: var(--text-3); cursor: not-allowed; border: 1px solid var(--border); box-shadow: none; transform: none; }
+.spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+.ask-btn.loading .spinner { display: block; }
+.ask-btn.loading .btn-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* OUTPUT PANEL */
+.output-panel { background: #0F172A; border: 1px solid #1E293B; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-height: 480px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.output-header { background: #1E293B; padding: 0.8rem 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #334155; }
+.t-dot { width: 11px; height: 11px; border-radius: 50%; }
+.t-red{background:#FF5F57} .t-yellow{background:#FFBD2E} .t-green{background:#28CA41}
+.output-title { margin: 0 auto; font-family: var(--mono); font-size: 0.7rem; color: #475569; }
+.output-body { padding: 1.25rem 1.5rem; flex: 1; font-family: var(--mono); font-size: 0.78rem; line-height: 1.9; overflow-y: auto; }
+.out-placeholder { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 0.75rem; min-height: 380px; }
+.out-placeholder svg { opacity: 0.15; }
+.out-placeholder p { font-size: 0.75rem; color: #475569; line-height: 1.7; }
+.out-prompt-line { color: #60A5FA; margin-bottom: 0.6rem; }
+.out-prompt-line::before { content: '❯ '; color: #334155; }
+.out-divider { border: none; border-top: 1px solid #1E293B; margin: 0.75rem 0; }
+.out-answer { color: #CBD5E1; white-space: pre-wrap; word-break: break-word; }
+.out-sources { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #1E293B; }
+.out-sources-label { font-size: 0.65rem; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.source-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: #1E293B; border: 1px solid #334155; border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.68rem; color: #94A3B8; margin: 0.2rem 0.2rem 0 0; }
+.cursor { display: inline-block; width: 6px; height: 13px; background: #60A5FA; vertical-align: middle; animation: blink 1s step-end infinite; }
+@keyframes blink { 50%{opacity:0} }
+
+/* HISTORY */
+.history { margin-top: 2rem; }
+.history-label { font-size: 0.68rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.85rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
+.history-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.75rem; color: var(--text-2); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); }
+.history-item:hover { border-color: var(--blue-border); color: var(--text); background: var(--blue-dim); }
+.hi-arrow { color: var(--text-3); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.upload-card { animation: fadeUp 0.4s ease both; }
+.section-label { animation: fadeUp 0.4s 0.05s ease both; opacity:0; animation-fill-mode:both; }
+.page-title { animation: fadeUp 0.4s 0.1s ease both; opacity:0; animation-fill-mode:both; }
+.page-sub { animation: fadeUp 0.4s 0.15s ease both; opacity:0; animation-fill-mode:both; }
+.demo-layout { animation: fadeUp 0.4s 0.2s ease both; opacity:0; animation-fill-mode:both; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="dot"></span>SmartRepo</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html#how-it-works">How It Works</a></li>
+      <li><a href="index.html#about">About</a></li>
+    </ul>
+    <a href="index.html" class="nav-back">← Back to site</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ── UPLOAD CARD ── -->
+  <div class="upload-card">
+
+    <!-- LEFT: dark branding panel -->
+    <div class="upload-brand">
+      <div>
+        <div class="brand-eyebrow">Repository Indexer</div>
+        <div class="brand-title" style="margin-top:0.65rem;">Index Any<br/>Codebase</div>
+        <div class="brand-desc" style="margin-top:0.65rem;">Upload a ZIP or paste a GitHub URL to index your repository with FAISS embeddings.</div>
+      </div>
+      <div class="brand-divider"></div>
+      <div class="brand-features">
+        <div class="brand-feat">ZIP or GitHub URL</div>
+        <div class="brand-feat">Semantic FAISS indexing</div>
+        <div class="brand-feat">Real-time progress</div>
+        <div class="brand-feat">Persistent across restarts</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: form panel -->
+    <div class="upload-form">
+      <div class="upload-tabs">
+        <button class="tab-btn active" onclick="switchTab('zip')">Upload ZIP</button>
+        <button class="tab-btn" onclick="switchTab('github')">GitHub URL</button>
+      </div>
+
+      <div id="tab-zip" class="tab-content">
+        <input type="file" id="zipFile" accept=".zip" style="display:none" onchange="handleZipSelect()"/>
+        <div class="drop-zone" id="dropZone"
+             onclick="document.getElementById('zipFile').click()"
+             ondragover="event.preventDefault()"
+             ondrop="handleDrop(event)">
+          <div class="dz-icon-wrap">
+            <svg class="dz-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="dz-info">
+            <span class="dz-title" id="zipLabel">Drop ZIP file or click to browse</span>
+            <span class="dz-sub">Supports any software repository · .zip only</span>
+          </div>
+        </div>
+        <button class="upload-btn" id="zipBtn" onclick="uploadZip()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Index Repository
+        </button>
+      </div>
+
+      <div id="tab-github" class="tab-content" style="display:none">
+        <div class="url-input-wrap">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <input type="text" id="githubUrl" placeholder="https://github.com/username/repository" class="url-input"/>
+        </div>
+        <button class="upload-btn" id="githubBtn" onclick="uploadGithub()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+          Clone & Index
+        </button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap"></div>
+    </div>
+  </div>
+
+  <!-- QUERY SECTION -->
+  <span class="section-label">LIVE · AI POWERED</span>
+  <h1 class="page-title">Ask Your Codebase Anything</h1>
+  <p class="page-sub">Upload a repository, then ask natural language questions — get grounded, accurate answers from your actual code.</p>
+
+  <div class="demo-layout">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">query.input</span>
+        <span class="panel-badge"><span class="live-dot"></span>live</span>
+      </div>
+      <div class="panel-body">
+        <div class="context-box">
+          <div class="context-label">Active Repository Context</div>
+          <div id="contextFiles"><div class="context-empty">No repository indexed yet.</div></div>
+        </div>
+        <div>
+          <div class="chips-label">Sample Questions</div>
+          <div class="chips" id="chipsContainer">
+            <div class="chip-skeleton" style="width:145px"></div>
+            <div class="chip-skeleton" style="width:115px"></div>
+            <div class="chip-skeleton" style="width:160px"></div>
+            <div class="chip-skeleton" style="width:130px"></div>
+          </div>
+        </div>
+        <div class="query-label">Your Question</div>
+        <textarea id="queryInput" placeholder="e.g. How does the authentication flow work?"></textarea>
+        <button class="ask-btn" id="askBtn" onclick="askQuestion()">
+          <div class="spinner"></div>
+          <span class="btn-text">Ask SmartRepo →</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-header">
+        <div class="t-dot t-red"></div><div class="t-dot t-yellow"></div><div class="t-dot t-green"></div>
+        <span class="output-title">smartrepo — response</span>
+      </div>
+      <div class="output-body" id="outputBody">
+        <div class="out-placeholder">
+          <svg width="32" height="32" fill="none" stroke="#475569" stroke-width="1.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <p>Upload a repository and ask<br/>a question to see AI answers here.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history">
+    <div class="history-label">// recent queries</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://127.0.0.1:8000';
+
+function switchTab(tab) {
+  document.getElementById('tab-zip').style.display = tab==='zip' ? 'flex' : 'none';
+  document.getElementById('tab-zip').style.flexDirection = 'column';
+  document.getElementById('tab-github').style.display = tab==='github' ? 'flex' : 'none';
+  document.getElementById('tab-github').style.flexDirection = 'column';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',(tab==='zip'&&i===0)||(tab==='github'&&i===1)));
+}
+
+function handleZipSelect() {
+  const file = document.getElementById('zipFile').files[0];
+  if (file) {
+    document.getElementById('zipLabel').textContent = '✓ ' + file.name;
+    document.getElementById('dropZone').classList.add('has-file');
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.zip')) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    document.getElementById('zipFile').files = dt.files;
+    handleZipSelect();
+  }
+}
+
+function showProgress(msg, pct) {
+  const wrap = document.getElementById('progressWrap');
+  wrap.classList.add('visible');
+  if (pct >= 100) wrap.innerHTML = `<div class="progress-done">✓ ${escapeHtml(msg)}</div>`;
+  else if (pct === 0) wrap.innerHTML = `<div class="progress-err">✗ ${escapeHtml(msg)}</div>`;
+  else wrap.innerHTML = `
+    <div class="progress-stage"><span class="stage-dot"></span><span>${escapeHtml(msg)}</span></div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    <div class="progress-pct">${pct}%</div>`;
+}
+
+async function uploadZip() {
+  const file = document.getElementById('zipFile').files[0];
+  if (!file) return alert('Please select a ZIP file first.');
+  const btn = document.getElementById('zipBtn');
+  btn.disabled = true; showProgress('Preparing upload...', 2);
+  try {
+    const fd = new FormData(); fd.append('file', file);
+    const res = await fetch(`${BASE}/api/upload/zip`, { method:'POST', body:fd });
+    await handleSSE(res, btn);
+  } catch(err) { showProgress('Error: '+err.message, 0); btn.disabled=false; }
+}
+
+async function uploadGithub() {
+  const url = document.getElementById('githubUrl').value.trim();
+  if (!url) return alert('Please enter a GitHub URL.');
+  const btn = document.getElementById('githubBtn');
+  btn.disabled = true; showProgress('Connecting to GitHub...', 2);
+  try {
+    const fd = new FormData(); fd.append('url', url);
+    const res = await fetch(`${BASE}/api/upload/github`, { method:'POST', body:fd });
+    await handleSSE(res, btn);
+  } catch(err) { showProgress('Error: '+err.message, 0); btn.disabled=false; }
+}
+
+async function handleSSE(res, btn) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream:true });
+    const lines = buffer.split('\n'); buffer = lines.pop();
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const evt = JSON.parse(line.slice(6));
+          showProgress(evt.message, evt.percent);
+          if (evt.stage === 'done') loadContext();
+        } catch {}
+      }
+    }
+  }
+  btn.disabled = false;
+}
+
+async function loadContext() {
+  try {
+    const res = await fetch(`${BASE}/api/context`);
+    const data = await res.json();
+    document.getElementById('contextFiles').innerHTML = data.files?.length
+      ? data.files.map(f=>`<div class="context-file"><span class="file-dot"></span>${escapeHtml(f)}</div>`).join('')
+      : '<div class="context-empty">No repository indexed yet.</div>';
+    document.getElementById('chipsContainer').innerHTML = data.questions?.length
+      ? data.questions.map(q=>`<span class="chip" onclick="setQuery(this)">${escapeHtml(q)}</span>`).join('')
+      : `<span class="chip" onclick="setQuery(this)">What does this repo do?</span>
+         <span class="chip" onclick="setQuery(this)">How is the code structured?</span>
+         <span class="chip" onclick="setQuery(this)">What dependencies are used?</span>
+         <span class="chip" onclick="setQuery(this)">How do I run this project?</span>`;
+  } catch {}
+}
+
+function setQuery(el) { document.getElementById('queryInput').value = el.textContent; }
+function setQueryText(t) { document.getElementById('queryInput').value = t; document.getElementById('queryInput').focus(); }
+
+async function askQuestion() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) return;
+  const btn = document.getElementById('askBtn');
+  const output = document.getElementById('outputBody');
+  btn.disabled=true; btn.classList.add('loading');
+  output.innerHTML = `<div class="out-prompt-line">${escapeHtml(query)}</div><hr class="out-divider"/><div class="out-answer" id="streamOut"><span class="cursor"></span></div>`;
+  try {
+    const fd = new FormData(); fd.append('question', query);
+    const res = await fetch(`${BASE}/api/query`, { method:'POST', body:fd });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('streamOut').innerHTML=`<span style="color:#F87171">✗ ${escapeHtml(data.detail)}</span>`; return; }
+    const answer = data.answer;
+    const sources = [...new Set(data.sources||[])];
+    const streamEl = document.getElementById('streamOut');
+    streamEl.innerHTML = '';
+    let i=0;
+    const iv = setInterval(()=>{
+      if (i < answer.length) { streamEl.textContent += answer[i++]; }
+      else {
+        clearInterval(iv);
+        if (sources.length) streamEl.insertAdjacentHTML('afterend',`
+          <div class="out-sources">
+            <div class="out-sources-label">Retrieved from</div>
+            ${sources.map(s=>`<span class="source-chip">${escapeHtml(s)}</span>`).join('')}
+          </div>`);
+      }
+    }, 10);
+    addHistory(query);
+  } catch(err) { document.getElementById('streamOut').innerHTML=`<span style="color:#F87171">✗ ${escapeHtml(err.message)}</span>`; }
+  btn.disabled=false; btn.classList.remove('loading');
+}
+
+function addHistory(query) {
+  const list = document.getElementById('historyList');
+  const item = document.createElement('div');
+  item.className='history-item';
+  item.innerHTML=`<span>${escapeHtml(query)}</span><span class="hi-arrow">↗</span>`;
+  item.onclick=()=>setQueryText(query);
+  list.insertBefore(item,list.firstChild);
+  if (list.children.length>8) list.removeChild(list.lastChild);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('queryInput').addEventListener('keydown', e=>{
+  if (e.key==='Enter'&&(e.metaKey||e.ctrlKey)) askQuestion();
+});
+
+loadContext();
+</script>
+</body>
+</html>

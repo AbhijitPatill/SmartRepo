@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartRepo — AI System for Code Understanding</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8FAFC; --surface: #FFFFFF; --border: #E2E8F0;
+    --text: #0F172A; --muted: #64748B; --subtle: #94A3B8;
+    --accent: #2563EB; --accent-light: #EFF6FF;
+    --mono: 'JetBrains Mono', monospace; --sans: 'Inter', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 60px; background: rgba(248,250,252,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 2rem; }
+  .nav-inner { max-width: 1100px; width: 100%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-family: var(--mono); font-weight: 700; font-size: 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+  .nav-logo .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+  .nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { background: var(--text) !important; color: #fff !important; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.8rem !important; transition: background 0.15s !important; }
+  .nav-cta:hover { background: #1E293B !important; }
+  @media (max-width: 600px) { .nav-links { display: none; } }
+
+  /* SHARED */
+  .section-label { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); background: var(--accent-light); border: 1px solid #BFDBFE; padding: 0.3rem 0.85rem; border-radius: 100px; letter-spacing: 0.05em; display: inline-block; }
+  .section-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; letter-spacing: -0.03em; margin-top: 1rem; color: var(--text); }
+  .section-sub { font-size: 1rem; color: var(--muted); margin-top: 0.75rem; line-height: 1.7; max-width: 520px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── HERO ── */
+  #home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 2rem 4rem; position: relative; overflow: hidden; }
+  #home::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 48px 48px; opacity: 0.5; pointer-events: none; }
+  #home::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, transparent 30%, var(--bg) 80%); pointer-events: none; }
+  .hero-inner { position: relative; z-index: 1; max-width: 780px; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; animation: fadeUp 0.7s ease both; }
+  .badge { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.72rem; color: var(--accent); background: var(--accent-light); border: 1px solid #BFDBFE; padding: 0.3rem 0.85rem; border-radius: 100px; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  h1 { font-size: clamp(2.4rem, 5.5vw, 3.8rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
+  h1 .mono-word { font-family: var(--mono); font-size: 0.9em; background: linear-gradient(135deg, #2563EB, #7C3AED); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { font-size: 1.05rem; color: var(--muted); line-height: 1.7; max-width: 540px; }
+  .hero-ctas { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
+  .btn-primary { background: var(--text); color: #fff; padding: 0.72rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s, transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08); }
+  .btn-primary:hover { background: #1E293B; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface); color: var(--text); padding: 0.72rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; text-decoration: none; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 0.5rem; transition: border-color 0.15s, transform 0.1s, background 0.15s; }
+  .btn-secondary:hover { border-color: var(--border-hover); background: #F1F5F9; transform: translateY(-1px); }
+  .credits { font-size: 0.78rem; color: var(--subtle); font-family: var(--mono); flex-wrap: wrap; justify-content: center; display: flex; gap: 0.5rem; }
+  .credits span { color: var(--muted); }
+
+  /* TERMINAL */
+  .terminal-wrap { margin-top: 3.5rem; width: 100%; max-width: 680px; position: relative; z-index: 1; animation: fadeUp 0.7s 0.2s ease both; opacity: 0; }
+  .terminal { background: #0F172A; border-radius: 12px; overflow: hidden; border: 1px solid #1E293B; box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
+  .terminal-bar { background: #1E293B; padding: 0.7rem 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .t-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .t-red{background:#FF5F57} .t-yellow{background:#FFBD2E} .t-green{background:#28CA41}
+  .t-title { margin: 0 auto; font-family: var(--mono); font-size: 0.72rem; color: #475569; }
+  .terminal-body { padding: 1.4rem 1.6rem; font-family: var(--mono); font-size: 0.82rem; line-height: 1.9; }
+  .t-prompt{color:#475569} .t-cmd{color:#E2E8F0} .t-comment{color:#334155} .t-output{color:#94A3B8} .t-key{color:#60A5FA} .t-val{color:#34D399}
+  .t-cursor { display: inline-block; width: 8px; height: 14px; background: #60A5FA; vertical-align: middle; animation: blink 1s step-end infinite; }
+  @keyframes blink { 50%{opacity:0} }
+
+  /* STATS + PILLS */
+  .stats-bar { position: relative; z-index: 1; margin-top: 2.5rem; width: 100%; max-width: 680px; display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden; animation: fadeUp 0.7s 0.35s ease both; opacity: 0; }
+  .stat { padding: 1.2rem; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-size: 1.5rem; font-weight: 700; font-family: var(--mono); color: var(--text); letter-spacing: -0.02em; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+  .tech-row { position: relative; z-index: 1; margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; animation: fadeUp 0.7s 0.45s ease both; opacity: 0; }
+  .tech-pill { font-family: var(--mono); font-size: 0.72rem; font-weight: 500; padding: 0.3rem 0.75rem; border-radius: 100px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .tech-pill.blue  { color:#2563EB; background:#EFF6FF; border-color:#BFDBFE; }
+  .tech-pill.green { color:#059669; background:#ECFDF5; border-color:#A7F3D0; }
+  .tech-pill.purple{ color:#7C3AED; background:#F5F3FF; border-color:#DDD6FE; }
+  .tech-pill.orange{ color:#D97706; background:#FFFBEB; border-color:#FDE68A; }
+  .scroll-hint { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: var(--subtle); font-size: 0.72rem; font-family: var(--mono); animation: fadeUp 1s 1s ease both; opacity: 0; }
+  .scroll-arrow { width: 18px; height: 18px; border-right: 2px solid var(--subtle); border-bottom: 2px solid var(--subtle); transform: rotate(45deg); animation: bounce 1.5s infinite; }
+  @keyframes bounce { 0%,100%{transform:rotate(45deg) translateY(0)} 50%{transform:rotate(45deg) translateY(4px)} }
+
+  /* ── HOW IT WORKS ── */
+  #how-it-works { padding: 6rem 2rem; background: #fff; border-top: 1px solid var(--border); }
+  .hiw-inner { max-width: 1100px; margin: 0 auto; }
+  .pipeline { margin-top: 4rem; display: flex; flex-direction: column; position: relative; }
+  .pipeline::before { content: ''; position: absolute; left: 27px; top: 0; bottom: 0; width: 2px; background: var(--border); z-index: 0; }
+  .step { display: flex; gap: 1.5rem; align-items: flex-start; position: relative; z-index: 1; padding-bottom: 2.5rem; }
+  .step-num { width: 56px; height: 56px; min-width: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 0.85rem; font-weight: 700; color: var(--accent); position: relative; z-index: 1; }
+  .step-num.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 4px #BFDBFE; }
+  .step-body { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; flex: 1; transition: border-color 0.2s, box-shadow 0.2s; }
+  .step-body:hover { border-color: #BFDBFE; box-shadow: 0 4px 20px rgba(37,99,235,0.07); }
+  .step-tag { font-family: var(--mono); font-size: 0.68rem; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .step-title { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+  .step-desc { font-size: 0.875rem; color: var(--muted); margin-top: 0.4rem; line-height: 1.6; }
+  .step-code { margin-top: 1rem; background: #0F172A; border-radius: 8px; padding: 1rem 1.2rem; font-family: var(--mono); font-size: 0.78rem; line-height: 1.8; overflow-x: auto; }
+  .sc-comment{color:#334155} .sc-kw{color:#7C3AED} .sc-fn{color:#60A5FA} .sc-str{color:#34D399} .sc-var{color:#E2E8F0} .sc-num{color:#FB923C}
+  .arch { margin-top: 5rem; }
+  .arch-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; }
+  .arch-flow { display: flex; align-items: center; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; overflow-x: auto; gap: 0; }
+  .arch-node { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 90px; }
+  .arch-box { padding: 0.5rem 0.85rem; border-radius: 8px; font-family: var(--mono); font-size: 0.72rem; font-weight: 600; white-space: nowrap; text-align: center; }
+  .ab-blue{background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE} .ab-green{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+  .ab-purple{background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE} .ab-orange{background:#FFFBEB;color:#D97706;border:1px solid #FDE68A} .ab-slate{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0}
+  .arch-label { font-size: 0.68rem; color: var(--subtle); font-family: var(--mono); }
+  .arch-arrow { color: var(--subtle); font-size: 1.2rem; padding: 0 0.5rem; margin-top: -0.8rem; }
+
+  /* ── ABOUT ── */
+  #about { padding: 6rem 2rem; border-top: 1px solid var(--border); }
+  .about-inner { max-width: 1100px; margin: 0 auto; }
+  .team-grid { margin-top: 3.5rem; display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; max-width: 720px; }
+  @media (max-width: 600px) { .team-grid { grid-template-columns: 1fr; } .stats-bar { grid-template-columns: 1fr; } .stat { border-right: none; border-bottom: 1px solid var(--border); } .stat:last-child{border-bottom:none} }
+  .member-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; display: flex; flex-direction: column; gap: 0.75rem; transition: box-shadow 0.2s, border-color 0.2s; }
+  .member-card:hover { border-color: #BFDBFE; box-shadow: 0 4px 24px rgba(37,99,235,0.08); }
+  .member-avatar { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #2563EB, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: #fff; font-family: var(--mono); }
+  .member-name { font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .member-roll { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); background: var(--accent-light); border: 1px solid #BFDBFE; padding: 0.2rem 0.6rem; border-radius: 4px; display: inline-block; }
+  .project-section { margin-top: 5rem; }
+  .project-grid { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+  @media (max-width: 700px) { .project-grid { grid-template-columns: 1fr; } }
+  .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+  .info-label { font-family: var(--mono); font-size: 0.68rem; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .info-value { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+  .info-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+  .tech-section { margin-top: 5rem; }
+  .tech-table { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .tech-trow { display: grid; grid-template-columns: 140px 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .tech-trow:last-child { border-bottom: none; }
+  .tech-trow.header { background: #F8FAFC; }
+  .tech-cell { padding: 0.85rem 1.2rem; font-size: 0.82rem; }
+  .tech-trow.header .tech-cell { font-family: var(--mono); font-size: 0.68rem; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .tech-name { font-family: var(--mono); font-weight: 600; color: var(--text); font-size: 0.8rem; }
+  .tech-desc { color: var(--muted); }
+  .pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.68rem; font-family: var(--mono); }
+  .pill-blue{background:#EFF6FF;color:#2563EB} .pill-green{background:#ECFDF5;color:#059669} .pill-purple{background:#F5F3FF;color:#7C3AED} .pill-orange{background:#FFFBEB;color:#D97706}
+
+  /* FOOTER */
+  footer { padding: 2rem; border-top: 1px solid var(--border); text-align: center; }
+  .footer-logo { font-family: var(--mono); font-weight: 700; font-size: 1rem; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .footer-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .footer-sub { font-size: 0.8rem; color: var(--subtle); font-family: var(--mono); }
+
+  /* ACTIVE NAV HIGHLIGHT ON SCROLL */
+  .nav-links a.active { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#home" class="nav-logo"><span class="dot"></span>SmartRepo</a>
+    <ul class="nav-links">
+      <li><a href="#home" class="active">Home</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="explore.html" class="nav-cta">Explore →</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="home">
+  <div class="hero-inner">
+    <div class="badge"><span class="badge-dot"></span>RAG · LLM · FAISS · FastAPI</div>
+    <h1>Understand Any Codebase<br/><span class="mono-word">Instantly.</span></h1>
+    <p class="hero-sub">SmartRepo is a Retrieval-Augmented Generation system that transforms any software repository into an interactive knowledge base — ask questions, get accurate, context-grounded answers.</p>
+    <div class="hero-ctas">
+      <a href="explore.html" class="btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Explore SmartRepo
+      </a>
+      <a href="#how-it-works" class="btn-secondary">How It Works ↓</a>
+    </div>
+    <div class="credits">
+      <span>Abhijit Patil — 371031</span>&nbsp;·&nbsp;
+      <span>Niharika Rahangdale — 371034</span>&nbsp;·&nbsp;
+      <span>B.Tech AI & DS</span>
+    </div>
+  </div>
+
+  <div class="terminal-wrap">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="t-dot t-red"></div><div class="t-dot t-yellow"></div><div class="t-dot t-green"></div>
+        <span class="t-title">smartrepo — query</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">$ </span><span class="t-cmd">smartrepo query --repo ./my-project</span></div>
+        <div class="t-comment"># Indexing 142 files across 18 modules...</div>
+        <div><span class="t-output">✓ Embeddings stored in FAISS index</span></div>
+        <br/>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">Where is the authentication logic handled?</span></div>
+        <br/>
+        <div><span class="t-key">Answer: </span><span class="t-val">auth/middleware.py</span></div>
+        <div class="t-output">&nbsp; JWT validation is in <span class="t-val">verify_token()</span> at line 42.</div>
+        <div class="t-output">&nbsp; Refresh logic lives in <span class="t-val">AuthService.refresh()</span> — uses Redis for sessions.</div>
+        <br/>
+        <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">RAG</div><div class="stat-label">Retrieval-Augmented Generation</div></div>
+    <div class="stat"><div class="stat-num">FAISS</div><div class="stat-label">Semantic Vector Search</div></div>
+    <div class="stat"><div class="stat-num">Local</div><div class="stat-label">Ollama LLM · No cloud needed</div></div>
+  </div>
+
+  <div class="tech-row">
+    <span class="tech-pill blue">Python</span>
+    <span class="tech-pill blue">FastAPI</span>
+    <span class="tech-pill green">FAISS</span>
+    <span class="tech-pill green">SentenceTransformers</span>
+    <span class="tech-pill purple">Ollama</span>
+    <span class="tech-pill purple">HuggingFace</span>
+    <span class="tech-pill orange">Streamlit</span>
+  </div>
+
+  <div class="scroll-hint"><span>scroll to explore</span><div class="scroll-arrow"></div></div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how-it-works">
+  <div class="hiw-inner">
+    <span class="section-label">UNDER THE HOOD</span>
+    <h2 class="section-title">How SmartRepo Works</h2>
+    <p class="section-sub">A five-stage pipeline that converts raw source code into a semantic knowledge base, powered by RAG.</p>
+
+    <div class="pipeline">
+      <div class="step">
+        <div class="step-num active">01</div>
+        <div class="step-body">
+          <div class="step-tag">Input</div>
+          <div class="step-title">Upload Repository</div>
+          <div class="step-desc">Accepts a zipped project or a Git URL. SmartRepo recursively walks the directory tree, filtering out binaries and irrelevant files to extract only meaningful source.</div>
+          <div class="step-code">
+            <span class="sc-comment"># Supported input methods</span><br/>
+            <span class="sc-var">repo_path</span> = <span class="sc-str">"./my-project.zip"</span><br/>
+            <span class="sc-var">repo_url</span>  = <span class="sc-str">"https://github.com/user/repo"</span><br/>
+            <span class="sc-fn">load_repository</span>(<span class="sc-var">repo_path</span>, extensions=[<span class="sc-str">".py"</span>, <span class="sc-str">".js"</span>, <span class="sc-str">".md"</span>])
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-tag">Parsing</div>
+          <div class="step-title">Parse & Chunk</div>
+          <div class="step-desc">Each file is parsed into logical units — functions, classes, and README sections. Chunks are kept within a token limit to fit cleanly into the LLM context window.</div>
+          <div class="step-code">
+            <span class="sc-kw">def</span> <span class="sc-fn">chunk_file</span>(<span class="sc-var">content</span>, <span class="sc-var">max_tokens</span>=<span class="sc-num">512</span>):<br/>
+            &nbsp;&nbsp;<span class="sc-var">chunks</span> = <span class="sc-fn">split_by_function</span>(<span class="sc-var">content</span>)<br/>
+            &nbsp;&nbsp;<span class="sc-kw">return</span> [<span class="sc-var">c</span> <span class="sc-kw">for</span> <span class="sc-var">c</span> <span class="sc-kw">in</span> <span class="sc-var">chunks</span> <span class="sc-kw">if</span> <span class="sc-fn">token_count</span>(<span class="sc-var">c</span>) &lt;= <span class="sc-var">max_tokens</span>]
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-tag">Embeddings</div>
+          <div class="step-title">Generate Embeddings</div>
+          <div class="step-desc">Each chunk is passed through a SentenceTransformer model to produce a dense vector that captures semantic meaning — not just keywords.</div>
+          <div class="step-code">
+            <span class="sc-kw">from</span> sentence_transformers <span class="sc-kw">import</span> SentenceTransformer<br/>
+            <span class="sc-var">model</span> = <span class="sc-fn">SentenceTransformer</span>(<span class="sc-str">"all-MiniLM-L6-v2"</span>)<br/>
+            <span class="sc-var">embeddings</span> = <span class="sc-var">model</span>.<span class="sc-fn">encode</span>(<span class="sc-var">chunks</span>, <span class="sc-var">batch_size</span>=<span class="sc-num">32</span>)
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <div class="step-tag">Retrieval</div>
+          <div class="step-title">Semantic Search via FAISS</div>
+          <div class="step-desc">Embeddings are stored in a FAISS index. On each query, the top-k most semantically similar chunks are retrieved in milliseconds.</div>
+          <div class="step-code">
+            <span class="sc-kw">import</span> faiss<br/>
+            <span class="sc-var">index</span> = faiss.<span class="sc-fn">IndexFlatL2</span>(<span class="sc-var">embedding_dim</span>)<br/>
+            <span class="sc-var">index</span>.<span class="sc-fn">add</span>(<span class="sc-var">embeddings</span>)<br/>
+            <span class="sc-var">_, top_k</span> = <span class="sc-var">index</span>.<span class="sc-fn">search</span>(<span class="sc-fn">embed</span>(<span class="sc-var">query</span>), <span class="sc-var">k</span>=<span class="sc-num">5</span>)
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <div class="step-tag">Generation</div>
+          <div class="step-title">LLM Generates Grounded Answer</div>
+          <div class="step-desc">Retrieved chunks are injected into a structured prompt and sent to a local Ollama LLM. The model generates an explanation grounded in actual code — no hallucinations.</div>
+          <div class="step-code">
+            <span class="sc-var">prompt</span> = <span class="sc-fn">build_prompt</span>(<span class="sc-var">query</span>, <span class="sc-var">retrieved_chunks</span>)<br/>
+            <span class="sc-var">response</span> = <span class="sc-fn">ollama_generate</span>(<span class="sc-var">model</span>=<span class="sc-str">"mistral"</span>, <span class="sc-var">prompt</span>=<span class="sc-var">prompt</span>)<br/>
+            <span class="sc-kw">return</span> <span class="sc-var">response</span>[<span class="sc-str">"answer"</span>]
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch">
+      <div class="arch-title">System Architecture</div>
+      <div class="arch-flow">
+        <div class="arch-node"><div class="arch-box ab-slate">Streamlit UI</div><div class="arch-label">Frontend</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-blue">FastAPI</div><div class="arch-label">Backend API</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-blue">File Parser</div><div class="arch-label">Chunker</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-green">SentenceTransformer</div><div class="arch-label">Embeddings</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-green">FAISS</div><div class="arch-label">Vector Store</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-purple">Ollama LLM</div><div class="arch-label">Generation</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-box ab-orange">Response</div><div class="arch-label">JSON Output</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <div class="about-inner">
+    <span class="section-label">THE TEAM</span>
+    <h2 class="section-title">Built by</h2>
+    <p class="section-sub">A B.Tech semester project from the Department of Artificial Intelligence & Data Science.</p>
+
+    <div class="team-grid">
+      <div class="member-card">
+        <div class="member-avatar">AP</div>
+        <div class="member-name">Abhijit Patil</div>
+        <div class="member-roll">371031</div>
+      </div>
+      <div class="member-card">
+        <div class="member-avatar" style="background:linear-gradient(135deg,#059669,#0891B2);">NR</div>
+        <div class="member-name">Niharika Rahangdale</div>
+        <div class="member-roll">371034</div>
+      </div>
+    </div>
+    <p style="margin-top:1rem;font-size:0.8rem;color:var(--subtle);font-family:var(--mono);">B.Tech — Artificial Intelligence & Data Science</p>
+
+    <div class="project-section">
+      <h3 style="font-size:1.2rem;font-weight:700;color:var(--text);">Project Details</h3>
+      <div class="project-grid">
+        <div class="info-card">
+          <div class="info-label">Project Type</div>
+          <div class="info-value">B.Tech Semester Project</div>
+          <div class="info-sub">AI & Data Science</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Core Technique</div>
+          <div class="info-value">Retrieval-Augmented Generation</div>
+          <div class="info-sub">RAG + Vector Search</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Inference</div>
+          <div class="info-value">Local LLM via Ollama</div>
+          <div class="info-sub">No external API required</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-section">
+      <h3 style="font-size:1.2rem;font-weight:700;color:var(--text);">Tech Stack</h3>
+      <div class="tech-table">
+        <div class="tech-trow header">
+          <div class="tech-cell">Tool</div>
+          <div class="tech-cell">Purpose</div>
+          <div class="tech-cell">Category</div>
+        </div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">Python</span></div><div class="tech-cell tech-desc">Core logic, data processing, orchestration</div><div class="tech-cell"><span class="pill pill-blue">Language</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">FastAPI</span></div><div class="tech-cell tech-desc">REST API for upload and query endpoints</div><div class="tech-cell"><span class="pill pill-blue">Backend</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">FAISS</span></div><div class="tech-cell tech-desc">Efficient semantic vector similarity search</div><div class="tech-cell"><span class="pill pill-green">Vector DB</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">SentenceTransformers</span></div><div class="tech-cell tech-desc">Dense embedding generation from code/text</div><div class="tech-cell"><span class="pill pill-green">Embeddings</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">Ollama</span></div><div class="tech-cell tech-desc">Local LLM inference (Mistral, LLaMA)</div><div class="tech-cell"><span class="pill pill-purple">LLM</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">HuggingFace</span></div><div class="tech-cell tech-desc">Model hub for embeddings and LLMs</div><div class="tech-cell"><span class="pill pill-purple">Models</span></div></div>
+        <div class="tech-trow"><div class="tech-cell"><span class="tech-name">Streamlit</span></div><div class="tech-cell tech-desc">Quick demo UI for prototyping</div><div class="tech-cell"><span class="pill pill-orange">Frontend</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo"><span class="footer-dot"></span>SmartRepo</div>
+  <div class="footer-sub">B.Tech AI & DS · 2024 · Abhijit Patil · Niharika Rahangdale</div>
+</footer>
+
+<script>
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) current = s.getAttribute('id');
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+
+</body>
+</html>
