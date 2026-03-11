@@ -3,22 +3,29 @@ import numpy as np
 import os
 from rank_bm25 import BM25Okapi
 
-# ChromaDB persists automatically to this folder
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_DIR = os.path.join(BASE_DIR, "..", "data", "chromadb")
 os.makedirs(CHROMA_DIR, exist_ok=True)
 
 COLLECTION_NAME = "smartrepo_active"
 
-# In-memory BM25 index — rebuilt on each server start from ChromaDB
+# Lazy init — don't create on import
+_client = None
 _bm25_index = None
 _bm25_chunks = []
 
-client = chromadb.PersistentClient(path=CHROMA_DIR)
+
+def get_client():
+    global _client
+    if _client is None:
+        print("Initializing ChromaDB client...", flush=True)
+        _client = chromadb.PersistentClient(path=CHROMA_DIR)
+        print("ChromaDB ready!", flush=True)
+    return _client
 
 
 def get_collection():
-    return client.get_or_create_collection(
+    return get_client().get_or_create_collection(
         name=COLLECTION_NAME,
         metadata={"hnsw:space": "cosine"}
     )
@@ -28,7 +35,7 @@ def build_index(chunks: list[dict], embeddings: np.ndarray):
     global _bm25_index, _bm25_chunks
 
     try:
-        client.delete_collection(COLLECTION_NAME)
+        get_client().delete_collection(COLLECTION_NAME)
     except Exception:
         pass
 
@@ -52,7 +59,7 @@ def build_index(chunks: list[dict], embeddings: np.ndarray):
     tokenized = [_tokenize(c["path"] + " " + c["content"]) for c in chunks]
     _bm25_index = BM25Okapi(tokenized)
 
-    print(f"[Hybrid] Indexed {len(chunks)} chunks — ChromaDB + BM25 ready")
+    print(f"[Hybrid] Indexed {len(chunks)} chunks — ChromaDB + BM25 ready", flush=True)
 
 
 def _tokenize(text: str) -> list[str]:
@@ -65,7 +72,7 @@ def _tokenize(text: str) -> list[str]:
 def _load_bm25_from_chroma():
     global _bm25_index, _bm25_chunks
     try:
-        collection = client.get_collection(COLLECTION_NAME)
+        collection = get_client().get_collection(COLLECTION_NAME)
         results = collection.get(include=["documents", "metadatas"])
         chunks = [
             {"path": m["path"], "content": d, "extension": m.get("extension", "")}
@@ -74,9 +81,9 @@ def _load_bm25_from_chroma():
         _bm25_chunks = chunks
         tokenized = [_tokenize(c["path"] + " " + c["content"]) for c in chunks]
         _bm25_index = BM25Okapi(tokenized)
-        print(f"[Hybrid] BM25 rebuilt from ChromaDB — {len(chunks)} chunks")
+        print(f"[Hybrid] BM25 rebuilt from ChromaDB — {len(chunks)} chunks", flush=True)
     except Exception as e:
-        print(f"[Hybrid] BM25 rebuild failed: {e}")
+        print(f"[Hybrid] BM25 rebuild failed: {e}", flush=True)
 
 
 def search(query_embedding: np.ndarray, query_text: str = "", k: int = 7) -> list[dict]:
@@ -92,7 +99,6 @@ def search(query_embedding: np.ndarray, query_text: str = "", k: int = 7) -> lis
 
     fetch_k = min(k * 2, total)
 
-    # Step 1: ChromaDB semantic search
     semantic_results = collection.query(
         query_embeddings=[query_embedding.tolist()],
         n_results=fetch_k,
@@ -112,7 +118,6 @@ def search(query_embedding: np.ndarray, query_text: str = "", k: int = 7) -> lis
             "chunk": {"path": meta["path"], "content": doc, "extension": meta.get("extension", "")}
         }
 
-    # Step 2: BM25 keyword search
     bm25_scores = {}
     if query_text and _bm25_index is not None:
         tokens = _tokenize(query_text)
@@ -128,7 +133,6 @@ def search(query_embedding: np.ndarray, query_text: str = "", k: int = 7) -> lis
                     "chunk": _bm25_chunks[idx]
                 }
 
-    # Step 3: Merge — 60% semantic + 40% keyword
     all_ids = set(semantic_scores.keys()) | set(bm25_scores.keys())
     merged = {}
     for cid in all_ids:
@@ -140,14 +144,13 @@ def search(query_embedding: np.ndarray, query_text: str = "", k: int = 7) -> lis
             "chunk": chunk
         }
 
-    # Step 4: Return top k
     ranked = sorted(merged.values(), key=lambda x: x["score"], reverse=True)
     return [r["chunk"] for r in ranked[:k]]
 
 
 def index_exists() -> bool:
     try:
-        collection = client.get_collection(COLLECTION_NAME)
+        collection = get_client().get_collection(COLLECTION_NAME)
         return collection.count() > 0
     except Exception:
         return False
@@ -155,7 +158,7 @@ def index_exists() -> bool:
 
 def get_indexed_files() -> list[str]:
     try:
-        collection = client.get_collection(COLLECTION_NAME)
+        collection = get_client().get_collection(COLLECTION_NAME)
         results = collection.get(include=["metadatas"])
         seen = []
         for meta in results["metadatas"]:
