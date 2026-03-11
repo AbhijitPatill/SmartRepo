@@ -9,7 +9,7 @@ import asyncio
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from ml.parser import parse_repo
-from ml.embedder import get_embeddings
+from ml.embedder import get_embeddings, get_model
 from ml.retriever import build_index, search, index_exists, get_indexed_files
 from ml.generator import generate_answer
 
@@ -99,7 +99,6 @@ async def upload_github(url: str = Form(...)):
 
 @router.get("/context")
 async def get_context():
-    """Returns indexed file list and AI-generated sample questions."""
     try:
         if not index_exists():
             return {"files": [], "questions": []}
@@ -134,8 +133,7 @@ async def query(question: str = Form(...)):
         if not index_exists():
             raise HTTPException(status_code=400, detail="No repository indexed yet. Please upload first.")
 
-        from ml.embedder import model
-        query_embedding = model.encode(question)
+        query_embedding = get_model().encode(question)
         relevant_chunks = search(query_embedding, query_text=question)
 
         answer = generate_answer(question, relevant_chunks)

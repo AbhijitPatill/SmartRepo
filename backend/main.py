@@ -8,6 +8,7 @@ print(f"Python: {sys.version}", flush=True)
 print(f"Working dir: {os.getcwd()}", flush=True)
 
 try:
+    print("Importing routes...", flush=True)
     from api.routes import router
     print("Routes imported OK", flush=True)
 except Exception as e:
