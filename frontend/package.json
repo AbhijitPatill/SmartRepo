@@ -1,0 +1,8 @@
+{
+    "name": "smartrepo-frontend",
+    "version": "1.0.0",
+    "description": "Frontend for SmartRepo",
+    "scripts": {
+        "start": "npx serve ."
+    }
+}

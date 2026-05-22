@@ -167,4 +167,4 @@ def get_indexed_files() -> list[str]:
                 seen.append(path)
         return seen
     except Exception:
-        return []
+        return []               
